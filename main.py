@@ -69,7 +69,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: int):
             room=room_code,
         )
 
-@app.post("/create_room")
+@app.get("/create_room")
 async def create_room():
     room_code = generate_room_code()
     return JSONResponse(content={"room_code": room_code})
