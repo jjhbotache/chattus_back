@@ -39,7 +39,14 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         websocket=websocket,
         room=room_code,
     )
-    await websocket.send_json({"message": "success"})
+    await manager.broadcast(
+                message=Message(
+                    message="New user connected",
+                    kind="message",
+                    sender="System"
+                    ),
+                room=room_code,
+            )
     try:
         while True:
             data = await websocket.receive_text()

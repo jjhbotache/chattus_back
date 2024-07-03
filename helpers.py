@@ -27,7 +27,7 @@ problematic_characters = [
     "+",  # Más, puede ser interpretado como espacio en algunas codificaciones
     ",",  # Coma, separador de valores
 ]
-def generate_room_code(length: int = 10):
+def generate_room_code(length: int = 6):
     characters = string.ascii_letters + string.digits + string.punctuation
     code = ''.join(random.choices(characters, k=length))
     for char in code:
