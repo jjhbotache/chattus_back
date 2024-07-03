@@ -31,8 +31,9 @@ def generate_room_code(length: int = 6):
     characters = string.ascii_letters + string.digits + string.punctuation
     code = ''.join(random.choices(characters, k=length))
     for char in code:
-        if char in problematic_characters:
+        while char in problematic_characters:
             code = code.replace(char, random.choice(characters))
+            char = code[-1]
     return code
 
 def client_from_websocket(websocket):
