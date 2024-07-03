@@ -1,7 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from conecction_manager_class import ConnectionManager
+from conecction_manager_class import RoomConnectionManager
 from typing import List, Dict
 import json
 
@@ -11,8 +11,7 @@ from classes.msg_class import Message
 app = FastAPI()
 
 # Almacenamiento en memoria de las conexiones activas
-manager = ConnectionManager()
-msgs : Dict[int, List[Message]] = {}
+manager = RoomConnectionManager()
 
 
 
@@ -34,15 +33,13 @@ async def get():
     return JSONResponse(content={"message": "Hello World"})
 
 @app.websocket("/ws/{room_code}")
-async def websocket_endpoint(websocket: WebSocket, room_code: int):
-    print("conectando...")
+async def websocket_endpoint(websocket: WebSocket, room_code: str):
+    assert room_code is not None and len(room_code) > 5 
     await manager.connect(
         websocket=websocket,
         room=room_code,
-        msgs=msgs
     )
-    print("conectado")
-    websocket.send_text("connected")
+    await websocket.send_json({"message": "success"})
     try:
         while True:
             data = await websocket.receive_text()
@@ -54,13 +51,11 @@ async def websocket_endpoint(websocket: WebSocket, room_code: int):
                     sender=client_from_websocket(websocket)
                     ),
                 room=room_code,
-                msgs=msgs
             )
     except WebSocketDisconnect:
         manager.disconnect(
             websocket=websocket,
             room=room_code,
-            msgs=msgs
         )
         await manager.broadcast(
             message=Message(
@@ -74,4 +69,6 @@ async def websocket_endpoint(websocket: WebSocket, room_code: int):
 @app.get("/create_room")
 async def create_room():
     room_code = generate_room_code()
+    while room_code in manager.rooms:
+        room_code = generate_room_code()
     return JSONResponse(content={"room_code": room_code})
