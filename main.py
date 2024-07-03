@@ -35,11 +35,13 @@ async def get():
 
 @app.websocket("/ws/{room_code}")
 async def websocket_endpoint(websocket: WebSocket, room_code: int):
+    print("conectando...")
     await manager.connect(
         websocket=websocket,
         room=room_code,
         msgs=msgs
     )
+    print("conectado")
     websocket.send_text("connected")
     try:
         while True:
