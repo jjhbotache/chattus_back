@@ -13,7 +13,7 @@ class Room:
                  mandatory_focus:bool
                  ):
         self.users_websockets = users_websockets
-        self.msgs = msgs
+        self._msgs = msgs
         self.fast_chat = fast_chat
         self.once_view_photos_and_videos = once_view_photos_and_videos
         self.mandatory_focus = mandatory_focus
@@ -22,36 +22,39 @@ class Room:
 
 class RoomConnectionManager:
     def __init__(self):
-        self.rooms: Dict[int, Room] = {}
+        self.rooms: Dict[str, Room] = {}
         # each key in the dictionary will be a room 
         
+    def create_room(self, room_code: int, fast_chat:bool = False, once_view_photos_and_videos:bool = False, mandatory_focus:bool = False):
+        # if the room does not exist, create it
+        assert room_code not in self.rooms.keys()
+        self.rooms[room_code] = Room(
+            users_websockets=[],
+            msgs=[],
+            fast_chat=fast_chat,
+            once_view_photos_and_videos=once_view_photos_and_videos,
+            mandatory_focus=mandatory_focus
+        )
+        print("Room created")
+        print(self.rooms)
 
     async def connect(self, websocket: WebSocket, room: str):
         await websocket.accept()
         existing_rooms = self.rooms.keys()
-        if room not in existing_rooms:
-            print("Creating new room", room)
-            # creates a new room
-            self.rooms[room] = Room(
-                users_websockets=[websocket],
-                msgs=[],
-                fast_chat=False,
-                once_view_photos_and_videos=False,
-                mandatory_focus=False
-            )
-        else:
-            print("Room already exists, connecting user to the room ", room)
-            # if the room already exists, add the new user to the room
+        if room in existing_rooms:
             self.rooms[room].users_websockets.append(websocket)
             print("User added to the room")
             # add a msg saying that a new user has joined the room
-            self.rooms[room].msgs.append(
-                Message(
+            await self.broadcast(
+                message=Message(
                     message="A new user has joined the room",
                     sender="System",
                     kind="message"
-                )
+                ),
+                room=room
             )
+        else:
+            raise ValueError("Room does not exist")
             
 
     def disconnect(self, websocket: WebSocket, room: str):
@@ -67,11 +70,19 @@ class RoomConnectionManager:
     async def broadcast(self, message: Message, room: str):
         print("broadcasting message")
         assert room in self.rooms.keys()
-        self.rooms[room].msgs.append(message)
+        self.rooms[room]._msgs.append(message)
         
         for connection in self.rooms[room].users_websockets:
             print("sending message to ", connection)
             await connection.send_json({
-                "msgs":[msg.__dict__ for msg in self.rooms[room].msgs]
+                "msgs":[msg.__dict__ for msg in self.rooms[room]._msgs]
             })
         
+    async def clean_rooms(self):
+        rooms_to_delete = []
+        for room in self.rooms.keys():
+            if len(self.rooms[room].users_websockets) < 1:
+                rooms_to_delete.append(room)
+        
+        for room in rooms_to_delete:
+            del self.rooms[room]

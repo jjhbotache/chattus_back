@@ -6,12 +6,13 @@ from typing import List, Dict
 import json
 
 from helpers import client_from_websocket, generate_room_code
+from classes.requests_classes import CreateRoomRequest
 from classes.msg_class import Message
 
 app = FastAPI()
 
 # Almacenamiento en memoria de las conexiones activas
-manager = RoomConnectionManager()
+roomConnectionManager = RoomConnectionManager()
 
 
 
@@ -35,23 +36,15 @@ async def get():
 @app.websocket("/ws/{room_code}")
 async def websocket_endpoint(websocket: WebSocket, room_code: str):
     assert room_code is not None and len(room_code) > 5 
-    await manager.connect(
+    await roomConnectionManager.connect(
         websocket=websocket,
         room=room_code,
     )
-    await manager.broadcast(
-                message=Message(
-                    message="New user connected",
-                    kind="message",
-                    sender="System"
-                    ),
-                room=room_code,
-            )
     try:
         while True:
             data = await websocket.receive_text()
             parsed_data = json.loads(data)
-            await manager.broadcast(
+            await roomConnectionManager.broadcast(
                 message=Message(
                     message=parsed_data["message"],
                     kind=parsed_data["kind"],
@@ -60,11 +53,11 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                 room=room_code,
             )
     except WebSocketDisconnect:
-        manager.disconnect(
+        roomConnectionManager.disconnect(
             websocket=websocket,
             room=room_code,
         )
-        await manager.broadcast(
+        await roomConnectionManager.broadcast(
             message=Message(
                 message="Se ha desconectado",
                 sender="Servidor",
@@ -73,9 +66,20 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
             room=room_code,
         )
 
-@app.get("/create_room")
-async def create_room():
+@app.post("/create_room")
+async def create_room(createRoomData:CreateRoomRequest):
+    # clean all rooms that are empty
+    await roomConnectionManager.clean_rooms()
+    
     room_code = generate_room_code()
-    while room_code in manager.rooms:
+    while room_code in roomConnectionManager.rooms:
         room_code = generate_room_code()
+        
+    roomConnectionManager.create_room(
+        room_code=room_code,
+        fast_chat=createRoomData.fast_chat,
+        once_view_photos_and_videos=createRoomData.once_view_photos_and_videos,
+        mandatory_focus=createRoomData.mandatory_focus
+    )
+        
     return JSONResponse(content={"room_code": room_code})
