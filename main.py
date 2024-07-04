@@ -48,7 +48,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                 message=Message(
                     message=parsed_data["message"],
                     kind=parsed_data["kind"],
-                    sender=client_from_websocket(websocket)
+                    sender=websocket.id
                     ),
                 room=room_code,
             )

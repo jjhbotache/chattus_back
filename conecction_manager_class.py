@@ -3,7 +3,7 @@ from typing import List, Dict
 from fastapi import WebSocket
 import json
 from classes.msg_class import Message
-from helpers import client_from_websocket
+from helpers import client_from_websocket, generate_unique_id
 
 class Room:
     def __init__(self, 
@@ -41,6 +41,10 @@ class RoomConnectionManager:
 
     async def connect(self, websocket: WebSocket, room: str):
         await websocket.accept()
+        print("rooms: ", self.rooms)
+        websocket.id = room+str(len(self.rooms[room].users_websockets))
+        print("User connected")
+        print("ws id: ", websocket.id)
         existing_rooms = self.rooms.keys()
         if room in existing_rooms:
             self.rooms[room].users_websockets.append(websocket)
@@ -73,18 +77,22 @@ class RoomConnectionManager:
         assert room in self.rooms.keys()
         self.rooms[room]._msgs.append(message)
         msgs_dict_list = [msg.__dict__ for msg in self.rooms[room]._msgs]
+        print("msgs_dict_list: ", *msgs_dict_list, sep="\n")
+        
         
         for connection in self.rooms[room].users_websockets:
-            print("sending message to ", connection)
+            print("sending message to ", connection.id)
             # for each websocket in the room, transform the messages to , if the message sender is the same as the websocket, change the sender to "you
-            msgs_dict_list_custom = msgs_dict_list.copy()
-            connection_sender = client_from_websocket(connection)
-            for msg in msgs_dict_list_custom:
-                if msg["sender"] == connection_sender:
-                    msg["sender"] = "You"
+            connection_sender = connection.id
             
             await connection.send_json({
-                "msgs":msgs_dict_list
+                "msgs":[
+                    {
+                        "message":msg["message"],
+                        "sender":"You" if msg["sender"] == connection_sender else msg["sender"],
+                        "kind":msg["kind"]
+                    } for msg in msgs_dict_list
+                ]
             })
         
     async def clean_rooms(self):

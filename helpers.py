@@ -1,3 +1,4 @@
+import uuid
 import random
 import string
 
@@ -31,10 +32,16 @@ def generate_room_code(length: int = 6):
     characters = string.ascii_letters + string.digits + string.punctuation
     code = ''.join(random.choices(characters, k=length))
     for char in code:
-        while char in problematic_characters:
-            code = code.replace(char, random.choice(characters))
-            char = code[-1]
+        new_char = random.choice(string.ascii_letters + string.digits)
+        code = code.replace(char, new_char)
+            
+        
     return code
+
+
+
+def generate_unique_id():
+    return str(uuid.uuid4())
 
 def client_from_websocket(websocket):
     host, port = websocket.client
