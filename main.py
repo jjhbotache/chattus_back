@@ -57,14 +57,6 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
             websocket=websocket,
             room=room_code,
         )
-        await roomConnectionManager.broadcast(
-            message=Message(
-                message="Se ha desconectado",
-                sender="Servidor",
-                kind="message"
-            ),
-            room=room_code,
-        )
 
 @app.post("/create_room")
 async def create_room(createRoomData:CreateRoomRequest):

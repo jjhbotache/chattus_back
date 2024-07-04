@@ -65,6 +65,15 @@ class RoomConnectionManager:
     def disconnect(self, websocket: WebSocket, room: str):
         try:
             self.rooms[room].users_websockets.remove(websocket)
+            # tell the other users that the user has left the room
+            self.broadcast(
+                message=Message(
+                    message="A user has left the room",
+                    sender="System",
+                    kind="message"
+                ),
+                room=room
+            )
         except ValueError:
             print("User not found in the room")
         
