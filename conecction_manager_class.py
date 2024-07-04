@@ -3,6 +3,7 @@ from typing import List, Dict
 from fastapi import WebSocket
 import json
 from classes.msg_class import Message
+from helpers import client_from_websocket
 
 class Room:
     def __init__(self, 
@@ -71,11 +72,19 @@ class RoomConnectionManager:
         print("broadcasting message")
         assert room in self.rooms.keys()
         self.rooms[room]._msgs.append(message)
+        msgs_dict_list = [msg.__dict__ for msg in self.rooms[room]._msgs]
         
         for connection in self.rooms[room].users_websockets:
             print("sending message to ", connection)
+            # for each websocket in the room, transform the messages to , if the message sender is the same as the websocket, change the sender to "you
+            msgs_dict_list_custom = msgs_dict_list.copy()
+            connection_sender = client_from_websocket(connection)
+            for msg in msgs_dict_list_custom:
+                if msg["sender"] == connection_sender:
+                    msg["sender"] = "You"
+            
             await connection.send_json({
-                "msgs":[msg.__dict__ for msg in self.rooms[room]._msgs]
+                "msgs":msgs_dict_list
             })
         
     async def clean_rooms(self):
