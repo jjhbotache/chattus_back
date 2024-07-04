@@ -42,7 +42,7 @@ class RoomConnectionManager:
     async def connect(self, websocket: WebSocket, room: str):
         await websocket.accept()
         print("rooms: ", self.rooms)
-        websocket.id = room+str(len(self.rooms[room].users_websockets))
+        websocket.id = str(len(self.rooms[room].users_websockets))
         print("User connected")
         print("ws id: ", websocket.id)
         existing_rooms = self.rooms.keys()
