@@ -44,12 +44,17 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         while True:
             data = await websocket.receive_text()
             parsed_data = json.loads(data)
+            try:
+                extension = parsed_data["extension"]
+            except KeyError:
+                extension = None
+            
             await roomConnectionManager.broadcast(
                 message=Message(
                     message=parsed_data["message"],
                     kind=parsed_data["kind"],
                     sender=websocket.id,
-                    extension=parsed_data["extension"] or None
+                    extension=extension
                     ),
                 room=room_code,
             )
