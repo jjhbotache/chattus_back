@@ -80,17 +80,14 @@ class RoomConnectionManager:
         if len(self.rooms[room].users_websockets) < 1:
             del self.rooms[room]
             
-
     async def broadcast(self, message: Message, room: str):
         print("broadcasting message")
         assert room in self.rooms.keys()
         self.rooms[room]._msgs.append(message)
         msgs_dict_list = [msg.__dict__ for msg in self.rooms[room]._msgs]
-        print("msgs_dict_list: ", *msgs_dict_list, sep="\n")
         
         
         for connection in self.rooms[room].users_websockets:
-            print("sending message to ", connection.id)
             # for each websocket in the room, transform the messages to , if the message sender is the same as the websocket, change the sender to "you
             connection_sender = connection.id
             
@@ -99,7 +96,8 @@ class RoomConnectionManager:
                     {
                         "message":msg["message"],
                         "sender":"You" if msg["sender"] == connection_sender else msg["sender"],
-                        "kind":msg["kind"]
+                        "kind":msg["kind"],
+                        "extension":msg["extension"] if "extension" in msg else ""
                     } for msg in msgs_dict_list
                 ]
             })
