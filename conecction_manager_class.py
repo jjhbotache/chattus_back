@@ -104,6 +104,7 @@ class RoomConnectionManager:
                 ]
             })
         
+        next_file_id = 0
         # once the messages have been sent, for each message that is not a text msg, turn it direction to FILE(ID) 
         for msg in self.rooms[room]._msgs:
             if msg.kind != "message":
