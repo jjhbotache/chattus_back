@@ -59,7 +59,7 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
                 room=room_code,
             )
     except WebSocketDisconnect:
-        roomConnectionManager.disconnect(
+        await roomConnectionManager.disconnect(
             websocket=websocket,
             room=room_code,
         )

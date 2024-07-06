@@ -40,6 +40,7 @@ class RoomConnectionManager:
         print(self.rooms)
 
     async def connect(self, websocket: WebSocket, room: str):
+        assert room in self.rooms.keys()
         await websocket.accept()
         print("rooms: ", self.rooms)
         websocket.id = str(len(self.rooms[room].users_websockets))
@@ -62,11 +63,12 @@ class RoomConnectionManager:
             raise ValueError("Room does not exist")
             
 
-    def disconnect(self, websocket: WebSocket, room: str):
+    async def disconnect(self, websocket: WebSocket, room: str):
         try:
             self.rooms[room].users_websockets.remove(websocket)
             # tell the other users that the user has left the room
-            self.broadcast(
+            print("telling users that the user has left the room")            
+            await self.broadcast(
                 message=Message(
                     message="A user has left the room",
                     sender="System",
@@ -101,6 +103,21 @@ class RoomConnectionManager:
                     } for msg in msgs_dict_list
                 ]
             })
+        
+        # once the messages have been sent, for each message that is not a text msg, turn it direction to FILE(ID) 
+        last_file_parsed_to_link = [
+           msg for msg in self.rooms[room]._msgs if (msg.kind != "message")and("FILE(" in msg.message)
+        ]
+        
+        
+        next_file_id = int( last_file_parsed_to_link[-1].message.split("(")[1].split(")")[0] ) if len(last_file_parsed_to_link) > 0 else 0
+        
+        
+        for msg in self.rooms[room]._msgs:
+            if msg.kind != "message":
+                msg.message = f"FILE({str(next_file_id)})"
+                next_file_id += 1
+                
         
     async def clean_rooms(self):
         rooms_to_delete = []
