@@ -105,14 +105,6 @@ class RoomConnectionManager:
             })
         
         # once the messages have been sent, for each message that is not a text msg, turn it direction to FILE(ID) 
-        last_file_parsed_to_link = [
-           msg for msg in self.rooms[room]._msgs if (msg.kind != "message")and("FILE(" in msg.message)
-        ]
-        
-        
-        next_file_id = int( last_file_parsed_to_link[-1].message.split("(")[1].split(")")[0] ) if len(last_file_parsed_to_link) > 0 else 0
-        
-        
         for msg in self.rooms[room]._msgs:
             if msg.kind != "message":
                 msg.message = f"FILE({str(next_file_id)})"
