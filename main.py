@@ -81,3 +81,10 @@ async def create_room(createRoomData:CreateRoomRequest):
     )
         
     return JSONResponse(content={"room_code": room_code})
+
+@app.get("/verify_room/{room_code}")
+async def verify_room(room_code: str):
+    if room_code in roomConnectionManager.rooms:
+        return JSONResponse(content={"room_exists": True})
+    else:
+        return JSONResponse(content={"room_exists": False})
