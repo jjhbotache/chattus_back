@@ -51,6 +51,7 @@ class RoomConnectionManager:
             self.rooms[room].users_websockets.append(websocket)
             print("User added to the room")
             # add a msg saying that a new user has joined the room
+            
             await self.broadcast(
                 message=Message(
                     message="A new user has joined the room",
@@ -85,11 +86,18 @@ class RoomConnectionManager:
     async def broadcast(self, message: Message, room: str):
         print("broadcasting message")
         assert room in self.rooms.keys()
-        self.rooms[room]._msgs.append(message)
-        msgs_dict_list = [msg.__dict__ for msg in self.rooms[room]._msgs]
+        current_room = self.rooms[room]
+        
+        # if the message is the first message and its sender is the system, do not send it
+        if len(current_room._msgs) == 0\
+            and message.sender == "System"\
+            and len(current_room.users_websockets) < 2 : return
+        
+        current_room._msgs.append(message)
+        msgs_dict_list = [msg.__dict__ for msg in current_room._msgs]
         
         
-        for connection in self.rooms[room].users_websockets:
+        for connection in current_room.users_websockets:
             # for each websocket in the room, transform the messages to , if the message sender is the same as the websocket, change the sender to "you
             connection_sender = connection.id
             
@@ -106,7 +114,7 @@ class RoomConnectionManager:
         
         next_file_id = 0
         # once the messages have been sent, for each message that is not a text msg, turn it direction to FILE(ID) 
-        for msg in self.rooms[room]._msgs:
+        for msg in current_room._msgs:
             if msg.kind != "message":
                 msg.message = f"FILE({str(next_file_id)})"
                 next_file_id += 1
