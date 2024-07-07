@@ -96,7 +96,7 @@ class RoomConnectionManager:
         current_room._msgs.append(message)
         msgs_dict_list = [msg.__dict__ for msg in current_room._msgs]
         
-        print("msgs_dict_list: ", msgs_dict_list)
+        # print("msgs_dict_list: ", msgs_dict_list)
         
         for connection in current_room.users_websockets:
             # for each websocket in the room, transform the messages to , if the message sender is the same as the websocket, change the sender to "you
