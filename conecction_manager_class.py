@@ -77,6 +77,16 @@ class RoomConnectionManager:
                 ),
                 room=room
             )
+            # if only one user is left in the room, tell they
+            if len(self.rooms[room].users_websockets) == 1:
+                await self.broadcast(
+                    message=Message(
+                        message="You are the only one left in the room",
+                        sender="System",
+                        kind="message"
+                    ),
+                    room=room
+                )
         except ValueError:
             print("User not found in the room")
         
