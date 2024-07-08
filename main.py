@@ -44,10 +44,10 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str):
         while True:
             data = await websocket.receive_text()
             parsed_data = json.loads(data)
-            try:
-                extension = parsed_data["extension"]
-            except KeyError:
-                extension = None
+                
+            
+            try: extension = parsed_data["extension"]
+            except KeyError: extension = None
             
             await roomConnectionManager.broadcast(
                 message=Message(
@@ -75,9 +75,7 @@ async def create_room(createRoomData:CreateRoomRequest):
         
     roomConnectionManager.create_room(
         room_code=room_code,
-        fast_chat=createRoomData.fast_chat,
-        once_view_photos_and_videos=createRoomData.once_view_photos_and_videos,
-        mandatory_focus=createRoomData.mandatory_focus
+        configGiven=createRoomData.__dict__
     )
         
     return JSONResponse(content={"room_code": room_code})
@@ -85,6 +83,12 @@ async def create_room(createRoomData:CreateRoomRequest):
 @app.get("/verify_room/{room_code}")
 async def verify_room(room_code: str):
     if room_code in roomConnectionManager.rooms:
-        return JSONResponse(content={"room_exists": True})
+        room = roomConnectionManager.rooms[room_code]
+        print("room")
+        print(room.__dict__)
+        return JSONResponse(content={
+            "room_exists": True,
+            "room_data": room.config
+        })
     else:
         return JSONResponse(content={"room_exists": False})
