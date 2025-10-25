@@ -26,4 +26,4 @@ USER chattususer
 # Expose the port FastAPI uses by default
 EXPOSE 8000
 
-CMD ["fastapi", "run", "main:app", "--port", "8000"]
+CMD ["fastapi", "run", "main.py", "--port", "8000"]
